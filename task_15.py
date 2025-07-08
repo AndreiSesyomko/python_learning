@@ -10,7 +10,7 @@ class BlockTranspositionCipher:
             if self.key.count(letter) > 1:
                 raise ValueError("Letters of key must be unique!")
 
-        self.text = text.lower()
+        self.text = text.strip()
         self.decrypt = decrypt
         self.blocks = []
         self.replaced = []
@@ -19,61 +19,71 @@ class BlockTranspositionCipher:
         self.index = 0
         self.result = ""
 
-        temp = list(''.join(self.key))
-        for i in range(0, len(self.key)):
-            index = self.key.index(min(temp))
-            self.positions.append(index)
-            if self.key[index] in temp:
-                temp.remove(self.key[index])
-
-        common = ""
-        counter = 0
-        for letter in self.text:
-            if counter < len(self.key):
-                common += letter
-                counter += 1
-            else:
-                self.blocks.append(common)
-                temp_replace = ""
-                for i in range(0, len(common)):
-                    temp_replace += common[self.positions[i]]
-                self.replaced.append(temp_replace)
-                if self.decrypt:
-                    self.decrypted.append({self.positions[j]: self.replaced[e][j] for j in range(0, len(self.key)) for e in range(0, len(self.replaced))})
-                common = letter
-                counter = 1
-
-        self.replaced.append(common)
-        self.blocks.append(common)
-        self.decrypted.append(common)
-
-        if len(self.text) % len(self.key) != 0:
-            self.blocks[-1] = self.blocks[-1].ljust(len(self.key))
-            self.replaced[-1] = self.replaced[-1].ljust(len(self.key))
-            self.decrypted[-1] = self.decrypted[-1].ljust(len(self.key))
-        self.decrypted[-1] = {self.positions[j]: self.replaced[-1][j] for j in range(0, len(self.key))}
-
-        result = ""
-        if self.decrypt:
-            for i in range(0, len(self.decrypted)):
-                part = list(self.decrypted[i].values())
-                for j in range(0, len(part)):
-                    result += part[j]
-            result = result.replace(" ", "")
+        if len(self.key) >= len(self.text):
+            short = self.key[:len(self.text)]
+            temp = list(''.join(short))
+            for i in range(0, len(self.text)):
+                index = short.index(min(temp))
+                self.positions.append(index)
+                if short[index] in temp:
+                    temp.remove(short[index])
+            result = ""
+            for i in range(0, len(self.text)):
+                result += self.text[self.positions[i]]
             self.result = result
         else:
-            for i in range(0, len(self.replaced)):
-                result += self.replaced[i]
-            self.result = result
+            temp = list(''.join(self.key))
+            for i in range(0, len(self.key)):
+                index = self.key.index(min(temp))
+                self.positions.append(index)
+                if self.key[index] in temp:
+                    temp.remove(self.key[index])
+            common = ""
+            counter = 0
+            for letter in self.text:
+                if counter < len(self.key):
+                    common += letter
+                    counter += 1
+                else:
+                    self.blocks.append(common)
+                    temp_replace = ""
+                    for i in range(0, len(common)):
+                        temp_replace += common[self.positions[i]]
+                    self.replaced.append(temp_replace)
+                    if self.decrypt:
+                        self.decrypted.append({self.positions[j]: self.replaced[e][j] for j in range(0, len(self.key)) for e in range(0, len(self.replaced))})
+                    common = letter
+                    counter = 1
+
+            self.replaced.append(common)
+            self.blocks.append(common)
+            self.decrypted.append(common)
+
+            if len(self.text) % len(self.key) != 0:
+                self.blocks[-1] = self.blocks[-1].ljust(len(self.key))
+                self.replaced[-1] = self.replaced[-1].ljust(len(self.key))
+                self.decrypted[-1] = self.decrypted[-1].ljust(len(self.key))
+            self.decrypted[-1] = {self.positions[j]: self.replaced[-1][j] for j in range(0, len(self.key))}
+            result = ""
+            if self.decrypt:
+                for i in range(0, len(self.decrypted)):
+                    part = list(self.decrypted[i].values())
+                    for j in range(0, len(part)):
+                        result += part[j]
+                self.result = result
+            else:
+                for i in range(0, len(self.replaced)):
+                    result += self.replaced[i]
+                self.result = result
 
     def __str__(self):
+        if len(self.key) >= len(self.text): return self.result
         result = ""
         if self.decrypt:
             for i in range(0, len(self.decrypted)):
                 part = list(self.decrypted[i].values())
                 for j in range(0, len(part)):
                     result += part[j]
-            result = result.replace(" ", "")
             self.result = result
             return result
         else:
@@ -121,3 +131,8 @@ for i, decrypted_block in enumerate(decipher, 1):
 decipher = BlockTranspositionCipher(encrypted, key, decrypt=True)
 decrypted = ''.join(decipher)
 print(f"\nПолный расшифрованный текст: '{decrypted}'")
+
+print(BlockTranspositionCipher('HELLO', 'bac', decrypt=False))
+print(ord(' '))
+print(ord('L'))
+print(ord('O'))
