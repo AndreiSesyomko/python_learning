@@ -19,51 +19,56 @@ class BlockTranspositionCipher:
         self.index = 0
         self.result = ""
 
-        if len(self.key) >= len(self.text):
-            short = self.key[:len(self.text)]
-            temp = list(''.join(short))
+        if len(self.text) <= len(self.key):
+            self.set_positions(self.text)
             for i in range(0, len(self.text)):
-                index = short.index(min(temp))
-                self.positions.append(index)
-                if short[index] in temp:
-                    temp.remove(short[index])
-            result = ""
-            for i in range(0, len(self.text)):
-                result += self.text[self.positions[i]]
-            self.result = result
+                self.result += self.text[self.positions[i]]
         else:
-            temp = list(''.join(self.key))
-            for i in range(0, len(self.key)):
-                index = self.key.index(min(temp))
-                self.positions.append(index)
-                if self.key[index] in temp:
-                    temp.remove(self.key[index])
+            self.set_positions(self.text)
             common = ""
             counter = 0
             for letter in self.text:
                 if counter < len(self.key):
                     common += letter
                     counter += 1
+
                 else:
+                    self.set_positions(common)
+
                     self.blocks.append(common)
                     temp_replace = ""
                     for i in range(0, len(common)):
                         temp_replace += common[self.positions[i]]
                     self.replaced.append(temp_replace)
                     if self.decrypt:
-                        self.decrypted.append({self.positions[j]: self.replaced[e][j] for j in range(0, len(self.key)) for e in range(0, len(self.replaced))})
+                        self.decrypted.append(
+                            {self.positions[j]: self.replaced[e][j] for j in range(0, len(self.key)) for e in
+                             range(0, len(self.replaced))})
                     common = letter
                     counter = 1
 
-            self.replaced.append(common)
+            self.set_positions(common)
             self.blocks.append(common)
-            self.decrypted.append(common)
+            temp_replace = ""
+            for i in range(0, len(common)):
+                temp_replace += common[self.positions[i]]
+            self.replaced.append(temp_replace)
+            if len(self.text) % len(self.key) != 0:
+                self.replaced[-1] = self.replaced[-1].ljust(len(self.key))
+            if self.decrypt:
+                self.set_positions(self.text)
+                if len(self.text) <= len(self.key):
+                    self.decrypted.append({self.positions[j]: self.replaced[e][j] for j in range(0, len(self.text)) for e in
+                     range(0, len(self.replaced))})
+                else:
+                    self.decrypted.append({self.positions[j]:
+                    self.replaced[e][j] for j in range(0, len(self.key)) for e in
+                     range(0, len(self.replaced))})
 
             if len(self.text) % len(self.key) != 0:
                 self.blocks[-1] = self.blocks[-1].ljust(len(self.key))
                 self.replaced[-1] = self.replaced[-1].ljust(len(self.key))
-                self.decrypted[-1] = self.decrypted[-1].ljust(len(self.key))
-            self.decrypted[-1] = {self.positions[j]: self.replaced[-1][j] for j in range(0, len(self.key))}
+            if self.decrypt: self.decrypted[-1] = {self.positions[j]: self.replaced[-1][j] for j in range(0, len(self.key))}
             result = ""
             if self.decrypt:
                 for i in range(0, len(self.decrypted)):
@@ -75,6 +80,33 @@ class BlockTranspositionCipher:
                 for i in range(0, len(self.replaced)):
                     result += self.replaced[i]
                 self.result = result
+
+    def set_positions(self, target):
+        self.positions = []
+        if self.decrypt:
+            if len(self.key) >= len(target):
+                short = self.key[:len(target)]
+                temp = list(''.join(short))
+                for i in range(0, len(target)):
+                    index = short.index(min(temp))
+                    self.positions.append(index)
+                    if short[index] in temp:
+                        temp.remove(short[index])
+            else:
+                temp = list(''.join(self.key))
+                for i in range(0, len(self.key)):
+                    index = self.key.index(min(temp))
+                    self.positions.append(index)
+                    if self.key[index] in temp:
+                        temp.remove(self.key[index])
+        else:
+            cur = self.key
+            if len(self.key) >= len(target):
+                cur = self.key[:len(target)]
+
+            sorted_unique_letters = sorted(cur)
+            letter_to_index = {letter: idx for idx, letter in enumerate(sorted_unique_letters)}
+            self.positions = [letter_to_index[char] for char in cur]
 
     def __str__(self):
         if len(self.key) >= len(self.text): return self.result
@@ -132,7 +164,9 @@ decipher = BlockTranspositionCipher(encrypted, key, decrypt=True)
 decrypted = ''.join(decipher)
 print(f"\nПолный расшифрованный текст: '{decrypted}'")
 
+print(BlockTranspositionCipher('AI', 'cba', decrypt=False))
+print(BlockTranspositionCipher('IA', 'cba', decrypt=True))
 print(BlockTranspositionCipher('HELLO', 'bac', decrypt=False))
-print(ord(' '))
-print(ord('L'))
-print(ord('O'))
+print(BlockTranspositionCipher('EHLOL', 'bac', decrypt=True))
+print(BlockTranspositionCipher('CODE WITH PYTHON!', 'dacb', decrypt=False))
+print(BlockTranspositionCipher('ECDOT IWYHP NTOH!', 'dacb', decrypt=True))
