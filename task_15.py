@@ -75,10 +75,16 @@ class BlockTranspositionCipher:
                     part = list(self.decrypted[i].values())
                     for j in range(0, len(part)):
                         result += part[j]
-                self.result = result
+                self.result = result.strip()
             else:
                 for i in range(0, len(self.replaced)):
                     result += self.replaced[i]
+                index = 0
+                while index < len(result):
+                    if (0 <= ord(result[index]) <= 31) or (33 <= ord(result[index]) <= 47):
+                        result = result[:index] + ' ' + result[index:]
+                        index = index + 1
+                    index+=1
                 self.result = result
 
     def set_positions(self, target):
@@ -109,20 +115,7 @@ class BlockTranspositionCipher:
             self.positions = [letter_to_index[char] for char in cur]
 
     def __str__(self):
-        if len(self.key) >= len(self.text): return self.result
-        result = ""
-        if self.decrypt:
-            for i in range(0, len(self.decrypted)):
-                part = list(self.decrypted[i].values())
-                for j in range(0, len(part)):
-                    result += part[j]
-            self.result = result
-            return result
-        else:
-            for i in range(0, len(self.replaced)):
-                result += self.replaced[i]
-            self.result = result
-            return result
+        return self.result
 
     def __iter__(self):
         return iter(self.result)
@@ -169,4 +162,4 @@ print(BlockTranspositionCipher('IA', 'cba', decrypt=True))
 print(BlockTranspositionCipher('HELLO', 'bac', decrypt=False))
 print(BlockTranspositionCipher('EHLOL', 'bac', decrypt=True))
 print(BlockTranspositionCipher('CODE WITH PYTHON!', 'dacb', decrypt=False))
-print(BlockTranspositionCipher('ECDOT IWYHP NTOH!', 'dacb', decrypt=True))
+print(BlockTranspositionCipher('ECDOT IWYHP NTOH !', 'dacb', decrypt=True))
